@@ -1,0 +1,256 @@
+# Install the packages: spatialEco using the install.package()
+install.packages("spatialEco")
+install.packages("BAMMtools")
+install.packages("raster")
+
+# Load the packages with library()
+library("sf")
+library("tmap")
+library("raster")
+library("sp")
+library("spatialEco")
+library("BAMMtools")
+library("here")
+library("dplyr")
+#load data
+temp <- raster(here("Week 4 - Dataset", "Kenya Mean Teperature.tif"))
+nvdi <- raster(here("Week 4 - Dataset","Kenya NDVI.tif"))
+prec <- raster(here("Week 4 - Dataset","Kenya Precipitation.tif"))
+popl <- raster(here("Week 4 - Dataset","Kenya Population Density.tif"))
+elev <- raster(here("Week 4 - Dataset","Kenya Elevation.tif"))
+arid <- raster(here("Week 4 - Dataset","Kenya Aridity Index.tif"))
+
+# load the shapefiles
+kenya_border <- st_read(here("Week 4 - Dataset","Kenya_Border_3857.shp"))
+kenya_states <- st_read(here("Week 4 - Dataset","Kenya_States_3857.shp"))
+
+tm_shape(temp) + tm_raster(style = "cont", title = "tempreture", palette = "-Spectral") + tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") + tm_layout( frame = FALSE, legend.outside = TRUE)
+
+# reclassify temperature as a binary or Boolean layer
+temp
+# lowest value = 1.2
+# highest value = 29.6
+# reclassify anything below 15 as 0, and the rest above 15 as 1
+
+# reclassify the values into two groups 
+# all values > 0 and <= 15 change to 0
+# all values > 15 and <= 30 change to 1
+temp_cl <- c(0, 15, 0, 
+                       15, 30, 1)
+
+# convert into a matrix format
+temp_cl_mat <- matrix(temp_cl, ncol = 3, byrow = TRUE)
+# see matrix
+temp_cl_mat
+# apply matrix to reclassify() function to categorize the raster accordingly
+temp_recl <- reclassify(temp, temp_cl_mat)
+
+temp_recl
+
+tm_shape(temp_recl) + tm_raster(style = "cat", title = "Temperature", palette= c("grey", "#F1948A"), labels = c("Unsuitable (<15.0)", "Suitable (15 & above)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+    
+    # reclassify elevation as a binary or Boolean layer
+elev
+# lowest value = -11m (below sea level)
+# highest value = 4865m (above sea level)
+# reclassify anything below 1200m as 1, and the rest above 1200m as 0
+
+# all values > -12 and <= 1199.999 change to 0
+# all values > 1199.999 and <= 4900 change to 1
+elev_cl <- c(-12, 1199.999, 1, 
+                            1199.999, 4900, 0)
+
+# convert into a matrix format
+elev_cl_mat <- matrix(elev_cl, ncol = 3, byrow = TRUE) 
+# see matrix
+elev_cl_mat
+# apply matrix to reclassify() function to categorize the raster accordingly
+elev_recl <- reclassify(elev, elev_cl_mat)
+
+tm_shape(elev_recl) + tm_raster(style = "cat", title = "Elevation", palette= c("grey", "orange"), labels = c("Unsuitable (>1200m)", "Suitable (1200m & below)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+# nvdi
+nvdi
+
+nvdi_cl <- c(-1, 0.5, 0, 
+                        0.5, 0.9, 1)
+
+nvdi_cl_mat <- matrix(nvdi_cl, ncol = 3, byrow = TRUE)
+nvdi_cl_mat
+nvdi_recl <- reclassify(nvdi, nvdi_cl_mat)
+
+tm_shape(nvdi_recl) + tm_raster(style = "cat", title = "NDVI (Vegetation)", palette= c("grey", "green"), labels = c("Unsuitable (0.5 & Below)", "Suitable (> 0.5)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+
+# prec
+prec
+
+prec_cl <- c(0, 350, 0, 
+                        350, 2700, 1)
+
+prec_cl_mat <- matrix(prec_cl, ncol = 3, byrow = TRUE) 
+prec_cl_mat
+
+prec_recl <- reclassify(prec, prec_cl_mat)
+
+tm_shape(prec_recl) + tm_raster(style = "cat", title = "Precipitation (mm)", palette= c("grey", "skyblue"), labels = c("Unsuitable (350mm & Below)", "Suitable (> 350mm)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+
+# popl
+popl
+
+popl_cl <- c(-1, 0, 0, 
+                        0, 126300, 1)
+
+popl_cl_mat <- matrix(popl_cl, ncol = 3, byrow = TRUE)
+popl_cl_mat
+popl_recl <- reclassify(popl , popl_cl_mat)
+
+tm_shape(popl_recl) + tm_raster(style = "cat", title = "Population density", palette= c("grey", "orange"), labels = c("Unsuitable (0 people)", "Suitable (at least 1 person)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+
+# arid
+arid
+
+arid_cl <- c(0, 0.20, 0, 
+                        0.20, 3, 1)
+
+arid_cl_mat <- matrix(arid_cl, ncol = 3, byrow = TRUE)
+arid_cl_mat
+arid_recl <- reclassify(arid, arid_cl_mat)
+
+tm_shape(arid_recl) + tm_raster(style = "cat", title = "Aridity (Dryness)", palette= c("grey", "orange"), labels = c("Unsuitable (0.2 & below)", "Suitable (> 0.2)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+# suitable
+Suitable_LF_Binary <- temp_recl*nvdi_recl*prec_recl*elev_recl*popl_recl*arid_recl
+
+tm_shape(Suitable_LF_Binary) + tm_raster(style = "cat", title = "", palette=c("#f0f0f0", "red"), labels=c("Zone: Not Suitable", "Zone: Highly Suitable")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") + tm_text("NAME_1", size = "AREA") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+    
+RasterStack <- stack(temp_recl, nvdi_recl, prec_recl, elev_recl, popl_recl, arid_recl)
+Suitable_LF_Summed <- calc(RasterStack, sum)
+# check for minimum and maximum
+Suitable_LF_Summed@data@min
+Suitable_LF_Summed@data@max
+# minimum = 2
+# maximum = 6
+
+tm_shape(Suitable_LF_Summed) + tm_raster(style = "cat", title = "Suitability score", palette=c("#FDFEFE", "#FADBD8", "#F5B7B1", "#F1948A", "#E74C3C"), labels=c("Low (2)", "Modest (3)", "Medium (4)", "High (5)", "Highest (6)")) +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") + tm_text("NAME_1", size = "AREA") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+
+# 2 prec
+# Extract values from Raster
+precValues <- values(prec) 
+# Change the values from vector object to data.frame object
+precDF <- as.data.frame(precValues)
+# Remove missing values and reapply column name
+precDF <- as.data.frame(precDF[!is.na(precDF$precValues),])
+colnames(precDF) <- "precValues"
+# Use the getJenksBreaks() function. Sample 0.10 (10%) of the pixels at random and base the categorisation on this. 
+# NOTE: Doing this on the full data will take forever - so use the subset argument. 
+precJenks <- getJenksBreaks(precDF$precValues, 10, subset = nrow(precDF)*0.10)
+# See value in vector
+precJenks
+# shows first element
+precJenks[1] 
+# shows second element
+precJenks[2] 
+# so on and so further...
+# Create categorisation by using the Jenks values in the vector
+prec_jenks_cl <- c(prec@data@min-1, precJenks[1], 1,
+precJenks[1], precJenks[2], 2,
+precJenks[2], precJenks[3], 3,
+precJenks[3], precJenks[4], 4,
+precJenks[4], precJenks[5], 5,
+precJenks[5], precJenks[6], 6,
+precJenks[6], precJenks[7], 7,
+precJenks[7], precJenks[8], 8,
+precJenks[8], precJenks[9], 9,
+precJenks[9], prec@data@max+1, 10) 
+# create matrix
+prec_jenks_cl_mat <- matrix(prec_jenks_cl, ncol = 3, byrow = TRUE)
+# view categorisation in matrix
+prec_jenks_cl_mat
+# reclassify original raster using the jenks classifications
+prec_jenks_recl <- reclassify(prec, prec_jenks_cl_mat)
+
+
+# 3. popl
+# Extract values from Raster
+poplValues <- values(popl)
+# Change the values from vector object to data.frame object
+poplDF <- as.data.frame(poplValues)
+# Remove missing values and reapply column name
+poplDF <- as.data.frame(poplDF[!is.na(poplDF$poplValues),])
+colnames(poplDF) <- "poplValues"
+# Use the getJenksBreaks() function. Sample 0.10 (10%) of the pixels at random and base the categorisation on this. 
+# NOTE: Doing this on the full data will take forever - so use the subset argument. 
+poplJenks <- getJenksBreaks(poplDF$poplValues, 10, subset = nrow(poplDF)*0.10)
+# See value in vector
+poplJenks
+# shows first element
+poplJenks[1] 
+# shows second element
+poplJenks[2] 
+# so on and so further...
+# Create categorisation by using the Jenks values in the vector
+popl_jenks_cl <- c(popl@data@min-1, poplJenks[1], 1,
+poplJenks[1], poplJenks[2], 2,
+poplJenks[2], poplJenks[3], 3,
+poplJenks[3], poplJenks[4], 4,
+poplJenks[4], poplJenks[5], 5,
+poplJenks[5], poplJenks[6], 6,
+poplJenks[6], poplJenks[7], 7,
+poplJenks[7], poplJenks[8], 8,
+poplJenks[8], poplJenks[9], 9,
+poplJenks[9], popl@data@max+1, 10) 
+# create matrix
+popl_jenks_cl_mat <- matrix(popl_jenks_cl, ncol = 3, byrow = TRUE)
+# view categorisation in matrix
+popl_jenks_cl_mat
+# reclassify original raster using the jenks classifications
+popl_jenks_recl <- reclassify(popl, popl_jenks_cl_mat)
+
+
+# 4 nvdi
+# Extract values from Raster
+nvdiValues <- values(nvdi) 
+# Change the values from vector object to data.frame object
+nvdiDF <- as.data.frame(nvdiValues)
+# Remove missing values and reapply column name
+nvdiDF <- as.data.frame(nvdiDF[!is.na(nvdiDF$nvdiValues),])
+colnames(nvdiDF) <- "nvdiValues"
+# Use the getJenksBreaks() function. Sample 0.10 (10%) of the pixels at random and base the categorisation on this. 
+# NOTE: Doing this on the full data will take forever - so use the subset argument. 
+# EXTRA NOTE: The values for nvdi are very close to each other and so the algorithm splits it to just two cateogries
+nvdiJenks <- getJenksBreaks(nvdiDF$tempValues, 2, subset = nrow(nvdiDF)*0.10)
+# See value in vector
+nvdiJenks
+# shows first element
+nvdiJenks[1] 
+# shows second element
+nvdiJenks[2] 
+# so on and so further...
+# Create categorisation by using the Jenks values in the vector
+nvdi_jenks_cl <- c(nvdi@data@min-1, nvdiJenks[1], 1,
+nvdiJenks[1], nvdi@data@max+1, 2)
+# create matrix
+nvdi_jenks_cl_mat <- matrix(nvdi_jenks_cl, ncol = 3, byrow = TRUE)
+# view categorisation in matrix
+nvdi_jenks_cl_mat
+# reclassify original raster using the jenks classifications
+nvdi_jenks_recl <- reclassify(nvdi, nvdi_jenks_cl_mat)
+
+tm_shape(temp_jenks_recl) + tm_raster(style = "cont", title = "Temp (on Jenks scale)", palette= "-Spectral") +
+    tm_shape(kenya_states) + tm_polygons(alpha = 0, border.col = "black") +
+    tm_layout(frame = FALSE, legend.outside = TRUE)
+
